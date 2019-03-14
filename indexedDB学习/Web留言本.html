@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>使用indexedDB API制作Web留言本</title>
+</head>
+<body onload="init()">
+    <h1>indexedDB demo</h1>
+    <table>
+        <tr><td>姓名: </td><td><input type="text" id="name"></td></tr>
+        <tr><td>留言: </td><td><input type="text" id="memo"></td></tr>
+        <tr>
+            <td></td>
+            <td><input type="button" value="保存" onclick="saveData();"></td>
+        </tr>
+    </table>
+    <hr>
+    <table id="dataTable" border="1"></table>
+    <p id="msg"></p>
+</body>
+<script>
+        const dbName = 'Mydata';    //数据库名
+        const dbVersion = '20190314'; //版本号
+        let idb;
+        let dataTable;
+        function init(){
+            let dbConnect = indexedDB.open(dbName, dbVersion);  //连接数据库
+            dbConnect.onsuccess = function(e){
+                idb = e.target.result;
+                dataTable = document.getElementById('dataTable');
+                console.log('数据库连接成功');
+            };
+            dbConnect.onerror = function(e){
+                console.log('数据库连接失败');
+            }
+            dbConnect.onupgradeneeded = function(e){
+                idb = e.target.result;
+                if(!idb.objectStoreNames.contains('MsgData')){  //判断对象仓库是否已创建
+                    let tx = e.target.transaction;
+                    tx.onabort = function(e){
+                        console.log('对象仓库创建失败');
+                    }
+                    
+                    let name = 'MsgData';
+                    let optionalParameters = {
+                        keyPath: 'id',
+                        autoIncrement: true
+                    };
+                    let store = idb.createObjectStore(name, optionalParameters);
+                    console.log('对象仓库创建成功');
+                }
+            }
+        }
+    
+            function removeAllData(){
+                for(let i=dataTable.childNodes.length-1; i>=0; i--){
+                    dataTable.removeChild(dataTable.childNodes[i]);
+                }
+                let tr = document.createElement('tr');
+                let th1 = document.createElement('th');
+                let th2 = document.createElement('th');
+                let th3 = document.createElement('th');
+                th1.innerHTML = '姓名';
+                th2.innerHTML = '留言';
+                th3.innerHTML = '时间';
+                tr.appendChild(th1);
+                tr.appendChild(th2);
+                tr.appendChild(th3);
+                dataTable.appendChild(tr);
+            }
+    
+            function showData(dataObject){
+                let tr = document.createElement('tr');
+                let td1 = document.createElement('td');
+                td1.innerHTML = dataObject.name
+                let td2 = document.createElement('td');
+                td2.innerHTML = dataObject.memo;
+                let td3 = document.createElement('td');
+                let t = new Date();
+                t.setTime(dataObject.time);
+                td3.innerHTML = t.toLocaleDateString() + ' ' + t.toLocaleTimeString();
+                tr.appendChild(td1);
+                tr.appendChild(td2);
+                tr.appendChild(td3);
+                dataTable.appendChild(tr);
+            }
+    
+    
+            function showAllData(){
+                removeAllData();
+                let tx = idb.transaction(['MsgData'], 'readonly');  //开启事务
+                let store = tx.objectStore('MsgData');
+                let range = IDBKeyRange.lowerBound(1);
+                let req = store.openCursor(range, 'next');
+                req.onsuccess = function(){
+                    let cursor = this.result;
+                    if(cursor){
+                        showData(cursor.value);
+                        cursor.continue();
+                    }
+                }
+            }
+    
+            function addData(name, message, time){
+                let tx = idb.transaction(['MsgData'],"readwrite");
+                tx.oncomplete = function(){
+                    console.log('保存数据成功');
+                }
+                tx.onabort = function(){
+                    console.log('保存数据失败');
+                }
+                let store = tx.objectStore('MsgData');
+                let value = {
+                    name: name,
+                    memo: message,
+                    time: time
+                };
+                store.put(value);
+            }
+    
+            function saveData(){
+                let name = document.getElementById('name').value;
+                let memo = document.getElementById('memo').value;
+                let time = new Date().getTime();
+            
+                addData(name, memo, time);
+                showAllData();
+            }
+    </script>
+</html>

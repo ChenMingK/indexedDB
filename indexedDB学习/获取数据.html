@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>连接indexedDB数据库</title>
+    <script>
+        function connectDatabase() {
+            let dbName = 'indexedDBTest';   //数据库名
+            let dbVersion = 20190315;       //版本号
+            let idb;
+            let dbConnect = indexedDB.open(dbName, dbVersion);
+            dbConnect.onsuccess = function (e) {
+                idb = e.target.result;
+                //开启事务
+                let tx = idb.transaction(['Users'],"readonly");
+                let store = tx.objectStore('Users');             //获取事务对象的作用范围内的某个仓库
+
+                let req = store.get(1);
+                req.onsuccess = function(){
+                    if(this.result == undefined){
+                        alert('没有符合条件的数据');
+                    }
+                    else{
+                        alert('获取数据成功');
+                        console.log(this.result);
+                    }
+                }
+                req.onerror = function(){
+                    alert('获取数据失败');
+                }
+                dbConnect.onerror = function(){
+                    alert('数据库连接失败');
+                }
+
+                
+                
+            };
+        }
+    </script>
+</head>
+<body>
+<input type="button" value="获取数据" onclick="connectDatabase();">
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>连接indexedDB数据库</title>
+    <script>
+        function connectDatabase() {
+            let dbName = 'indexedDBTest';   //数据库名
+            let dbVersion = 20190314;       //版本号
+            let idb;
+        //    连接数据库，dbConnect对象为一个IDBOpenDBRequest对象，代表数据库连接的请求对象
+            let dbConnect = indexedDB.open(dbName, dbVersion);
+            dbConnect.onsuccess = function (e) {
+                // e.target.result为一个IDBDatabase对象，代表连接成功的数据库
+                idb = e.target.result;
+                alert('数据库连接成功');
+            };
+            dbConnect.onerror = function (e) {
+                alert('数据库连接失败')
+            };
+            /*
+            监听数据库连接请求对象的onupgradeneeded事件，当连接数据库时发现指定的版本号大于数据库当前版本号时触发该事件，
+            当该事件被触发时一个数据库的版本更新事务已经被开启，同时数据库的版本号已经被自动更新完毕，下面是指定其回调函数
+            要执行哪些操作 
+            */
+            dbConnect.onupgradeneeded = function (e) {
+                //数据库版本更新
+                //e.target.result为一个IDBDatabase对象，代表连接成功的数据库对象
+                idb = e.target.result;
+                
+                
+                let oldVersion = e.oldVersion;  //更新前的版本号
+                let newVersion = e.newVersion;  //更新后的版本号
+                alert('数据库版本更新成功，旧版本号为' + oldVersion + ' 新版本号为' + newVersion);  //这个提示比数据库连接的提示还早
+                             
+            }
+
+        }
+    </script>
+</head>
+<body>
+<input type="button" value="连接数据库" onclick="connectDatabase();">
+</body>
+</html>

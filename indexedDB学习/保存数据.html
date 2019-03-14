@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>连接indexedDB数据库</title>
+    <script>
+        function connectDatabase() {
+            let dbName = 'indexedDBTest';   //数据库名
+            let dbVersion = 20190315;       //版本号
+            let idb;
+            let dbConnect = indexedDB.open(dbName, dbVersion);
+            dbConnect.onsuccess = function (e) {
+                idb = e.target.result;
+                console.log(e);
+                //开启事务
+                let tx = idb.transaction(['Users'],"readwrite");
+                let store = tx.objectStore('Users');             //获取事务对象的作用范围内的某个仓库
+                let value = {
+                    userId: 1,
+                    username: '张三',
+                    address: '住址1'
+                };
+                let req = store.put(value);     //往该仓库放对象，异步操作，请求发出后立即异步执行
+                req.onsuccess = function(e){    //请求被成功执行时触发
+                    alert('数据保存成功');
+                }
+                req.onerror = function(e){
+                    alert('数据保存失败');
+                }
+                
+            };
+        }
+    </script>
+</head>
+<body>
+<input type="button" value="保存数据" onclick="connectDatabase();">
+</body>
+</html>

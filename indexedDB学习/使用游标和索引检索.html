@@ -1,0 +1,101 @@
+<!-- 请先使用前面的创建对象仓库和索引.html创建数据库和表以及索引先 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>连接indexedDB数据库</title>
+</head>
+<body>
+<input type="button" id="btnConnectDataBase" value="连接数据库" onclick="ConnectDataBase()">
+<input type="button" id="btnSaveData" value="保存数据" onclick="SaveData()">
+<input type="button" id="btnSearchData" value="检索数据" onclick="SearchData()">
+
+
+<script>
+    let dbName = 'indexedDBTest';  //数据库名
+    let dbVersion = '20190315';    //版本号
+    let idb;
+
+    // window.onload = function(){
+    //     document.getElementById('btnSaveData').disabled = true;
+    //     document.getElementById('btnSearchData').disabled = true;
+    // }
+
+    function ConnectDataBase(){
+        //连接数据库
+        let dbConnect = indexedDB.open(dbName, dbVersion);
+        dbConnect.onsuccess = function(e){
+            idb = e.target.result;          //引用IDBDatabase对象
+            console.log('数据库连接成功');
+            document.getElementById('btnSaveData').disabled = false;
+        };
+        dbConnect.onerror = function(e){
+            console.log('数据库连接失败');
+        };
+    }
+
+    function SaveData(){
+        //开启读写事务
+        let tx = idb.transaction(['Users'],'readwrite');
+        tx.oncomplete = function(){
+            console.log('保存数据成功');
+            document.getElementById('btnSearchData').disabled = false;
+        }
+        tx.onabort = function(){
+            console.log('保存数据失败');
+        }
+        
+        let store = tx.objectStore('Users');
+        let data1 = {
+            userId: 1,
+            userName: '张三',
+            address: '住址1'
+        };
+        store.put(data1);
+        let data2 = {
+            userId: 2,
+            userName: '李四',
+            address: '住址2'
+        };
+        store.put(data2);
+        let data3 = {
+            userId: 3,
+            userName: '王五',
+            address: '住址3'
+        };
+        store.put(data3);
+        let data4 = {
+            userId: 4,
+            userName: '赵六',
+            address: '住址4'
+        };
+        store.put(data4);
+    }
+
+    function SearchData(){
+        //开启只读事务
+        let tx = idb.transaction(['Users'], "readonly");
+        let store = tx.objectStore('Users');
+        let idx = store.index('userNameIndex');             //使用索引，注意这一步
+        let range = IDBKeyRange.bound('用户A','用户D');      //注意这个"范围"，调试看一下
+        let direction = 'next';
+        let req = idx.openCursor(range, direction);     //调用openCursor方法的对象改变了
+        req.onsuccess = function(event){             //谁会触发onsuccess事件？
+            let cursor = this.result;               // or event.target.result
+            if(cursor){
+                console.log('检索到一条数据，用户名为 ' + cursor.value.userName);
+                cursor.continue();           
+            }
+            else{
+                console.log('检索结束');
+            }
+
+            
+        }
+        req.onerror = function(){
+            console.log('数据检索失败');
+        }
+    }
+</script>
+</body>
+</html>

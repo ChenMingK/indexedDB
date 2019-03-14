@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>连接indexedDB数据库</title>
+    <script>
+        function connectDatabase() {
+            let dbName = 'indexedDBTest';   //数据库名
+            let dbVersion = 20190315;       //版本号
+            let idb;
+            //    连接数据库，dbConnect对象为一个IDBOpenDBRequest对象，代表数据库连接的请求对象
+            let dbConnect = indexedDB.open(dbName, dbVersion);
+            dbConnect.onsuccess = function (e) {
+                // e.target.result为一个IDBDatabase对象，代表连接成功的数据库
+                idb = e.target.result;
+                console.log('数据库连接成功');
+            };
+            dbConnect.onerror = function (e) {
+                console.log('数据库连接失败')
+            };
+            /*
+            监听数据库连接请求对象的onupgradeneeded事件，当连接数据库时发现指定的版本号大于数据库当前版本号时触发该事件，
+            当该事件被触发时一个数据库的版本更新事务已经被开启，同时数据库的版本号已经被自动更新完毕，下面是指定其回调函数
+            要执行哪些操作 
+            */
+            dbConnect.onupgradeneeded = function (e) {
+                //数据库版本更新
+                //e.target.result为一个IDBDatabase对象，代表连接成功的数据库对象
+                idb = e.target.result;
+                    
+                //对象仓库创建部分
+                let tx = e.target.transaction;  //e.target.transaction属性值为一个IDBTransaction事务对象，此处代表版本更新事务
+                let name = 'Users';             
+                let optionalParameters = {
+                    keyPath: 'userId',
+                    autoIncrement: false
+                };
+                let store = idb.createObjectStore(name, optionalParameters);  //参数：对象仓库名， JavasScript对象(可选参数)   
+                //返回一个IDBObjectStore对象，该对象代表被创建成功的对象仓库
+                 
+                //索引创建部分
+                let IndexName = 'userNameIndex';
+                let keyPath = 'userName';
+                let IndexOptionalParameters = {
+                    unique: false,
+                    multiEntry: false
+                };
+                let idx = store.createIndex(IndexName, keyPath, IndexOptionalParameters); //参数：索引名， 
+                console.log('索引创建成功');
+            }
+        }
+    </script>
+</head>
+<body>
+<input type="button" value="创建对象仓库和索引" onclick="connectDatabase();">
+</body>
+</html>

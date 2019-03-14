@@ -1,0 +1,114 @@
+<!-- 请先使用前面的创建对象仓库和索引.html创建数据库和表以及索引先 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>连接indexedDB数据库</title>
+</head>
+<body>
+<input type="button" id="btnConnectDataBase" value="连接数据库" onclick="ConnectDataBase()">
+<input type="button" id="btnSaveData" value="保存数据" onclick="SaveData()">
+<input type="button" id="btnSearchData" value="获取数据" onclick="getData()">
+
+
+<script>
+    let dbName = 'indexedDBTest';  //数据库名
+    let dbVersion = '20190316';    //版本号
+    let idb;
+
+
+    function ConnectDataBase(){
+        //连接数据库
+        let dbConnect = indexedDB.open(dbName, dbVersion);
+        dbConnect.onsuccess = function(e){
+            idb = e.target.result;          //引用IDBDatabase对象
+            console.log('数据库连接成功');
+        };
+        dbConnect.onerror = function(e){
+            console.log('数据库连接失败');
+        };
+
+        dbConnect.onupgradeneeded = function(e){
+            //数据库版本更新
+            console.log('数据库版本更新成功');
+            idb = e.target.result;
+            let tx = e.target.transaction;
+            let name = 'Users2';
+            let optionalParameters = {
+                keyPath: 'userId',      //主键值
+                autoIncrement: false
+            };
+            let store = idb.createObjectStore(name, optionalParameters);
+            console.log('对象仓库User2创建成功');
+
+            let idxName = 'userNameAddressIndex';       //索引名
+            let idxKeyPath = ['userName', 'address'];   //索引属性
+            let idxOptionalParameters = {
+                unique:false,
+                multiEntry: false
+            };
+            let idx = store.createIndex(idxName, idxKeyPath, idxOptionalParameters);
+            console.log('索引创建成功');
+        }
+    }
+
+    function SaveData(){
+        //开启读写事务
+        let tx = idb.transaction(['Users2'],'readwrite');
+        tx.oncomplete = function(){
+            console.log('保存数据成功');
+        }
+        tx.onabort = function(){
+            console.log('保存数据失败');
+        }
+        
+        let store = tx.objectStore('Users2');
+        let data1 = {
+            userId: 1,
+            userName: '张三',
+            address: '住址1'
+        };
+        store.put(data1);   //使用put而不是add直接更新数据
+        let data2 = {
+            userId: 2,
+            userName: '用户B',
+            address: '住址2'
+        };
+        store.put(data2);
+        let data3 = {
+            userId: 3,
+            userName: '用户C',
+            address: '住址3'
+        };
+        store.put(data3);
+        let data4 = {
+            userId: 4,
+            userName: '用户D',
+            address: '住址4'
+        };
+        store.put(data4);
+    }
+
+    function getData(){
+        let tx = idb.transaction(['Users2'], 'readonly');
+        let store = tx.objectStore('Users2');
+        let idx = store.index('userNameAddressIndex');
+
+        let req = idx.get(['用户D','住址4']);   //复合索引
+        req.onsuccess = function(){
+            if(this.result == undefined){
+                console.log('没有复合的数据');
+            }
+            else{
+                console.log('获取数据成功，主键值为: ' + this.result.userId);
+            }
+        }
+        req.onerror = function(){
+            console.log('获取数据失败');
+        }
+
+    }
+</script>
+</body>
+</html>
+
